@@ -2656,6 +2656,42 @@ class Redis
     end
   end
 
+  # Interact with the module command (load, unload, list).
+  #
+  # @param [String] subcommand e.g. `load`, `unload`, `list`.
+  # @param [Array<String>] args depends on subcommand.
+  # @return [Hash<String, String>, String] depends on subcommand.
+  def module_cmd(subcommand, *args)
+    subcommand = subcommand.to_s.downcase
+    synchronize do |client|
+      client.call([:module, subcommand] + args)
+    end
+  end
+
+  # Loada a module at libpath
+  #
+  # @param [String] path the path to the module to be loaded.
+  # @return [Boolean] true if the module was loaded. false otherwise.
+  def module_load(path)
+    Boolify.call(module_cmd(:load, path))
+  end
+
+  # Unload a module
+  #
+  # @param [String] name the module name to be unloaded.
+  # @return [Boolean] true if the module was unloaded. false otherwise.
+  def module_unload(name)
+    BoolifySet.call(module_cmd(:unload, name))
+  end
+
+  # List all the loaded modules
+  #
+  # @return [Array<Hash<String, String>>] each hash contains the name and version of a module
+  def module_list()
+    reply = module_cmd(:list)
+    reply.map(&Hashify)
+  end
+
   # Interact with the sentinel command (masters, master, slaves, failover)
   #
   # @param [String] subcommand e.g. `masters`, `master`, `slaves`
